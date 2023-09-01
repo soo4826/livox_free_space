@@ -253,11 +253,13 @@ int LivoxFreeSpace::GenerateFreeSpace(float* fPoints1, int pointNum, std::vector
     free(fPoints3);
     free(pLabelGnd);
     free(this->pVImg);
+    pVImg = NULL;
     free(free_space_small);
     std::vector<int>().swap(count);
     t3 = clock();
     // printf("FreeSpace total Time: %f, Downsample: %f, Ground Segment: %f, FreeSpace: %f\n\n", 1000.0*(t3 - t0) / CLOCKS_PER_SEC, 
     //         1000.0*(t1 - t0) / CLOCKS_PER_SEC, 1000.0*(t2 - t1) / CLOCKS_PER_SEC, 1000.0*(t3 - t2) / CLOCKS_PER_SEC);
+    return 0;
 }
 
 /*

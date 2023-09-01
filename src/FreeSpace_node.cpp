@@ -38,7 +38,9 @@ uint8_t colors[19][3]={{244,67,54},{233,30,99},{156,39,176},{103,58,183},{63,81,
                         {139,195,74},{205,220,57},{255,235,59},{255,193,7},{255,152,0},{25,87,34},{121,85,72},{96,125,139},{255,100,200}};
 uint8_t colors_bg[10][3]={{83, 134, 139}, {0, 139,139}, {46, 139, 87}, {84, 139, 84}, {47, 79, 79}, {139, 117, 0}, {139, 10, 80}, {104, 34, 139}, {16, 78, 139}, {96, 123,139}};
 
+std::string input_pc = "/velodyne_points";
 float height_offset = 0.0;
+std::string frame_id = "velodyne";
 std_msgs::Header gheader;
 
 void PrepareBackground()
@@ -47,7 +49,7 @@ void PrepareBackground()
     for (int dis = 50; dis < 500; dis = dis + 50)
     {
         visualization_msgs::Marker circle, text;
-        circle.header.frame_id = "livox_frame";
+        circle.header.frame_id = frame_id; //"livox_frame";
         circle.header.stamp = ros::Time();
         circle.id = dis;
         circle.action = visualization_msgs::Marker::ADD;
@@ -65,7 +67,7 @@ void PrepareBackground()
         }
         circles.markers.push_back(circle);
 
-        text.header.frame_id = "livox_frame";
+        text.header.frame_id = frame_id; //"livox_frame";
         text.header.stamp = ros::Time();
         text.id = dis;
         text.action = visualization_msgs::Marker::ADD;
@@ -79,7 +81,7 @@ void PrepareBackground()
         texts.markers.push_back(text);
     }
     visualization_msgs::Marker one_line;
-    one_line.header.frame_id = "livox_frame";
+    one_line.header.frame_id = frame_id; //"livox_frame";
     one_line.header.stamp = ros::Time();
     one_line.id = 500;
     one_line.action = visualization_msgs::Marker::ADD;
@@ -142,6 +144,7 @@ void GenerateFreeSpace(pcl::PointCloud<pcl::PointXYZI> & pc)
 
     float *data=(float*)calloc(dnum*4,sizeof(float));
     std::vector<float> free_space;
+    ROS_INFO("1");
     for (int p=0; p<dnum; ++p)
     {
         data[p*4+0] = pc.points[p].x;
@@ -149,9 +152,10 @@ void GenerateFreeSpace(pcl::PointCloud<pcl::PointXYZI> & pc)
         data[p*4+2] = pc.points[p].z;
         data[p*4+3] = pc.points[p].intensity;
     }       
+    ROS_INFO("1");
     livox_free_space.GenerateFreeSpace(data, dnum, free_space);
     t1 = clock();
-
+    ROS_INFO("1");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     cloud->clear();
     cloud->width = dnum;
@@ -163,7 +167,7 @@ void GenerateFreeSpace(pcl::PointCloud<pcl::PointXYZI> & pc)
     pcl::toROSMsg(*cloud, msg2);
     
     msg2.header.stamp = gheader.stamp;
-    msg2.header.frame_id = "livox_frame";
+    msg2.header.frame_id = frame_id;
     fs_points_pub.publish(msg2);
 
     pcl::PointCloud<pcl::PointXYZI> fs;
@@ -179,7 +183,7 @@ void GenerateFreeSpace(pcl::PointCloud<pcl::PointXYZI> & pc)
     pcl::toROSMsg(fs, msg3);
     
     msg3.header.stamp = gheader.stamp;
-    msg3.header.frame_id = "livox_frame";
+    msg3.header.frame_id = frame_id;
     fs_pub.publish(msg3);
     std::vector<float>().swap(free_space);
     t2 = clock();
@@ -208,10 +212,14 @@ int main(int argc, char **argv)
 
     ros::NodeHandle n;
     n.getParam("height_offset", height_offset);
+    n.getParam("frame_id", frame_id);
+    n.getParam("input_pc", input_pc);
+    std::cout << "input pc:\t\t\t" << input_pc << std::endl;
     std::cout << "height offset:\t\t\t" << height_offset << std::endl;
+    std::cout << "Frame ID:\t\t\t" << frame_id << std::endl;
 
     ros::Subscriber sub_pc;
-    sub_pc = n.subscribe("/points_raw", 10, PointCloudCallback);
+    sub_pc = n.subscribe(input_pc, 10, PointCloudCallback);
     fs_points_pub = n.advertise<sensor_msgs::PointCloud2>("fs_pointcloud/pointcloud", 10);
     fs_distance_circle_pub  = n.advertise<visualization_msgs::MarkerArray>("fs_marker/circle", 10);
     fs_distance_text_pub  = n.advertise<visualization_msgs::MarkerArray>("fs_marker/dis_text", 10);
